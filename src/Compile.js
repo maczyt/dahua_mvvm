@@ -1,3 +1,7 @@
+/**
+ * @author maczyt
+ */
+
 const prefix = "d";
 const Directive = require("./Directive");
 const Watcher = require("./Watcher");
@@ -8,6 +12,11 @@ class Compile {
     this.parseNode(root, true);
   }
 
+  /**
+   * parse 元素
+   * @param {*} node
+   * @param {*} ifRoot
+   */
   parseNode(node, ifRoot) {
     const self = this;
     if (node.nodeType === 3) {
@@ -25,14 +34,28 @@ class Compile {
     });
   }
 
+  /**
+   * 处理文本节点
+   * @param {*} node
+   */
   parseTextNode(node) {
     const text = node.wholeText;
     const reg = /\{\{(.*?)\}\}/g;
     const exec = reg.exec(text);
     if (exec) {
-      const exp = exec[1];
+      const value = exec[1];
+      const pipeIndex = value.indexOf("|");
+      const exp =
+        pipeIndex !== "-1" ? value.slice(0, pipeIndex).trim() : value.trim();
+      const filters =
+        pipeIndex !== "-1"
+          ? value
+              .slice(pipeIndex + 1)
+              .split("|")
+              .map(filter => filter.trim())
+          : [];
       const def = Directive["text"];
-      def && def.call(Directive, node, this.vm, exp);
+      def && def.call(Directive, node, this.vm, exp, filters);
     }
   }
 
@@ -43,6 +66,12 @@ class Compile {
     }));
   }
 
+  /**
+   * 处理元素节点
+   * 编译指令并添加watcher
+   * @param {*} node
+   * @param {*} attr
+   */
   bindDirective(node, attr) {
     const name = attr.name;
     const value = attr.value;
@@ -53,12 +82,12 @@ class Compile {
     const filters =
       pipeIndex !== -1
         ? value
-            .slice(pipeIndex)
+            .slice(pipeIndex + 1)
             .split("|")
             .map(filter => filter.trim())
         : [];
     const def = Directive[directive];
-    def && def.call(Directive, node, this.vm, exp);
+    def && def.call(Directive, node, this.vm, exp, filters);
   }
 }
 

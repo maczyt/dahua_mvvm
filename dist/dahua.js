@@ -1,19 +1,374 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";var _createClass=function(){function a(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}return function(b,c,d){return c&&a(b.prototype,c),d&&a(b,d),b}}();function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}var prefix="d",Directive=require("./Directive"),Watcher=require("./Watcher"),Dep=require("./Dep"),Compile=function(){function a(b,c){_classCallCheck(this,a),this.vm=b,this.parseNode(c,!0)}return _createClass(a,[{key:"parseNode",value:function parseNode(a,b){var c=this;return 3===a.nodeType?this.parseTextNode(a):void(!b&&this.cloneAttribute(a.attributes).forEach(function(b){/^d-/.test(b.name)&&c.bindDirective(a,b)}),Array.prototype.forEach.call(a.childNodes,function(a){c.parseNode(a)}))}},{key:"parseTextNode",value:function parseTextNode(a){var b=a.wholeText,c=/\{\{(.*?)\}\}/g,d=c.exec(b);if(d){var e=d[1],f=Directive.text;f&&f.call(Directive,a,this.vm,e)}}},{key:"cloneAttribute",value:function cloneAttribute(a){return Array.prototype.map.call(a,function(a){return{name:a.name,value:a.value}})}},{key:"bindDirective",value:function bindDirective(a,b){var c=b.name,d=b.value,e=c.slice(prefix.length+1),f=d.indexOf("|"),g=-1===f?d.trim():d.slice(0,f).trim(),h=-1===f?[]:d.slice(f).split("|").map(function(a){return a.trim()}),i=Directive[e];i&&i.call(Directive,a,this.vm,g)}}]),a}();module.exports=Compile;
+"use strict";
 
-},{"./Dep":2,"./Directive":3,"./Watcher":5}],2:[function(require,module,exports){
-"use strict";var _createClass=function(){function a(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}return function(b,c,d){return c&&a(b.prototype,c),d&&a(b,d),b}}();function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}var Dep=function(){function a(){_classCallCheck(this,a),this.$watchers=[]}return _createClass(a,[{key:"add",value:function add(a){this.$watchers.push(a)}},{key:"notify",value:function notify(){this.$watchers.forEach(function(a){a.update()})}}]),a}();Dep.target=null,module.exports=Dep;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/**
+ * @author maczyt
+ */
+
+var prefix = "d";
+var Directive = require("./Directive");
+var Watcher = require("./Watcher");
+var Dep = require("./Dep");
+
+var Compile = function () {
+  function Compile(vm, root) {
+    _classCallCheck(this, Compile);
+
+    this.vm = vm;
+    this.parseNode(root, true);
+  }
+
+  /**
+   * parse 元素
+   * @param {*} node
+   * @param {*} ifRoot
+   */
+
+
+  _createClass(Compile, [{
+    key: "parseNode",
+    value: function parseNode(node, ifRoot) {
+      var self = this;
+      if (node.nodeType === 3) {
+        return this.parseTextNode(node);
+      }
+      if (!ifRoot) {
+        this.cloneAttribute(node.attributes).forEach(function (attr) {
+          if (RegExp("^" + prefix + "-").test(attr.name)) {
+            self.bindDirective(node, attr);
+          }
+        });
+      }
+      Array.prototype.forEach.call(node.childNodes, function (el) {
+        self.parseNode(el);
+      });
+    }
+
+    /**
+     * 处理文本节点
+     * @param {*} node
+     */
+
+  }, {
+    key: "parseTextNode",
+    value: function parseTextNode(node) {
+      var text = node.wholeText;
+      var reg = /\{\{(.*?)\}\}/g;
+      var exec = reg.exec(text);
+      if (exec) {
+        var value = exec[1];
+        var pipeIndex = value.indexOf("|");
+        var exp = pipeIndex !== "-1" ? value.slice(0, pipeIndex).trim() : value.trim();
+        var filters = pipeIndex !== "-1" ? value.slice(pipeIndex + 1).split("|").map(function (filter) {
+          return filter.trim();
+        }) : [];
+        var def = Directive["text"];
+        def && def.call(Directive, node, this.vm, exp, filters);
+      }
+    }
+  }, {
+    key: "cloneAttribute",
+    value: function cloneAttribute(attributes) {
+      return Array.prototype.map.call(attributes, function (attr) {
+        return {
+          name: attr.name,
+          value: attr.value
+        };
+      });
+    }
+
+    /**
+     * 处理元素节点
+     * 编译指令并添加watcher
+     * @param {*} node
+     * @param {*} attr
+     */
+
+  }, {
+    key: "bindDirective",
+    value: function bindDirective(node, attr) {
+      var name = attr.name;
+      var value = attr.value;
+      var directive = name.slice(prefix.length + 1);
+      var pipeIndex = value.indexOf("|");
+      var exp = pipeIndex !== -1 ? value.slice(0, pipeIndex).trim() : value.trim();
+      var filters = pipeIndex !== -1 ? value.slice(pipeIndex + 1).split("|").map(function (filter) {
+        return filter.trim();
+      }) : [];
+      var def = Directive[directive];
+      def && def.call(Directive, node, this.vm, exp, filters);
+    }
+  }]);
+
+  return Compile;
+}();
+
+module.exports = Compile;
+
+},{"./Dep":2,"./Directive":3,"./Watcher":7}],2:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Dep = function () {
+  function Dep() {
+    _classCallCheck(this, Dep);
+
+    this.$watchers = [];
+  }
+
+  _createClass(Dep, [{
+    key: "add",
+    value: function add(watcher) {
+      this.$watchers.push(watcher);
+    }
+  }, {
+    key: "notify",
+    value: function notify() {
+      this.$watchers.forEach(function (watcher) {
+        watcher.update();
+      });
+    }
+  }]);
+
+  return Dep;
+}();
+
+Dep.target = null;
+module.exports = Dep;
 
 },{}],3:[function(require,module,exports){
-"use strict";var Watcher=require("./Watcher"),Directive={text:function text(a,b,c){this.bind(a,b,c)},bind:function bind(a,b,c){updater(a,b[c]),new Watcher(a,b,c,function(b){updater(a,b)})}};module.exports=Directive;function updater(a,b){a.textContent=b}
+"use strict";
 
-},{"./Watcher":5}],4:[function(require,module,exports){
-"use strict";var _typeof="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(a){return typeof a}:function(a){return a&&"function"==typeof Symbol&&a.constructor===Symbol&&a!==Symbol.prototype?"symbol":typeof a};function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}var Dep=require("./Dep"),Observer=function a(b){_classCallCheck(this,a),observe(b)};module.exports=Observer;function observe(a){a&&"object"===("undefined"==typeof a?"undefined":_typeof(a))&&Object.keys(a).forEach(function(b){defineReactive(a,b,a[b])})}function defineReactive(a,b,c){var d=new Dep;observe(c),Object.defineProperty(a,b,{enumerable:!0,get:function get(){return Dep.target&&d.add(Dep.target),c},set:function set(a){c=a,d.notify()}})}
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-},{"./Dep":2}],5:[function(require,module,exports){
-"use strict";var _createClass=function(){function a(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}return function(b,c,d){return c&&a(b.prototype,c),d&&a(b,d),b}}();function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}var Dep=require("./Dep"),Watcher=function(){function a(b,c,d,e){_classCallCheck(this,a),this.node=b,this.vm=c,this.exp=d,this.cb=e,this.value=this.get()}return _createClass(a,[{key:"update",value:function update(){this.run()}},{key:"run",value:function run(){var a=this.get();this.cb.call(this.vm,a)}},{key:"get",value:function get(){Dep.target=this;var a=this.vm[this.exp];return Dep.target=null,a}}]),a}();module.exports=Watcher;
+var Watcher = require("./Watcher");
+var Filters = require("./Filter");
+var Utils = require("./Utils");
+
+var Directive = {
+  text: function text(node, vm, exp, filters) {
+    this.bind(node, vm, exp, filters);
+  },
+  bind: function bind(node, vm, exp, filters) {
+    filters = filters.map(function (fn) {
+      if (Filters[fn]) {
+        return Filters[fn];
+      }
+    });
+    var value = vm[exp];
+    if (filters.length > 0) {
+      value = Utils.compose.apply(Utils, _toConsumableArray(filters))(value);
+    }
+    // initial view
+    updater(node, value);
+    new Watcher(node, vm, exp, function (val) {
+      if (filters.length > 0) {
+        updater(node, Utils.compose.apply(Utils, _toConsumableArray(filters))(val));
+      } else {
+        updater(node, val);
+      }
+    });
+  }
+};
+
+module.exports = Directive;
+
+function updater(node, val) {
+  node.textContent = val;
+}
+
+},{"./Filter":4,"./Utils":6,"./Watcher":7}],4:[function(require,module,exports){
+"use strict";
+
+module.exports = {
+  upperCase: function upperCase(val) {
+    return val.toUpperCase();
+  }
+};
+
+},{}],5:[function(require,module,exports){
+"use strict";
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Dep = require("./Dep");
+
+var Observer = function Observer(data) {
+  _classCallCheck(this, Observer);
+
+  observe(data);
+};
+
+module.exports = Observer;
+
+/**
+ * 监听data
+ * @param {*} data
+ */
+function observe(data) {
+  if (!data || (typeof data === "undefined" ? "undefined" : _typeof(data)) !== "object") return;
+  Object.keys(data).forEach(function (key) {
+    defineReactive(data, key, data[key]);
+  });
+}
+
+/**
+ * 监听key
+ * @param {*} data
+ * @param {*} key
+ * @param {*} val
+ */
+function defineReactive(data, key, val) {
+  var dep = new Dep();
+  observe(val);
+  Object.defineProperty(data, key, {
+    enumerable: true,
+    get: function get() {
+      Dep.target && dep.add(Dep.target);
+      return val;
+    },
+    set: function set(newVal) {
+      val = newVal;
+      dep.notify();
+    }
+  });
+}
 
 },{"./Dep":2}],6:[function(require,module,exports){
-"use strict";var _createClass=function(){function a(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}return function(b,c,d){return c&&a(b.prototype,c),d&&a(b,d),b}}();function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}var Observer=require("./Observer"),Compile=require("./Compile"),Dahua=function(){function a(b){_classCallCheck(this,a),this.$el=document.querySelector(b.el),this.$data=b.data,this.proxy(),this.init()}return _createClass(a,[{key:"init",value:function init(){this.observe(),this.compile()}},{key:"proxy",value:function proxy(){var a=this;Object.keys(this.$data).forEach(function(b){Object.defineProperty(a,b,{get:function get(){return this.$data[b]},set:function set(a){this.$data[b]=a}})})}},{key:"observe",value:function observe(){this.$observer=new Observer(this.$data)}},{key:"compile",value:function compile(){this.$compile=new Compile(this,this.$el)}}]),a}();window.Dahua=Dahua;
+"use strict";
 
-},{"./Compile":1,"./Observer":4}]},{},[6]);
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+module.exports = {
+  compose: function compose() {
+    for (var _len = arguments.length, fns = Array(_len), _key = 0; _key < _len; _key++) {
+      fns[_key] = arguments[_key];
+    }
+
+    return function () {
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return fns.reduce(function (args, fn) {
+        return fn.apply(undefined, _toConsumableArray([].concat(args)));
+      }, [].concat(args));
+    };
+  }
+};
+
+},{}],7:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Dep = require("./Dep");
+
+var Watcher = function () {
+  function Watcher(node, vm, exp, cb) {
+    _classCallCheck(this, Watcher);
+
+    this.node = node;
+    this.vm = vm;
+    this.exp = exp;
+    this.cb = cb;
+    this.value = this.get();
+  }
+
+  _createClass(Watcher, [{
+    key: "update",
+    value: function update() {
+      this.run();
+    }
+  }, {
+    key: "run",
+    value: function run() {
+      var value = this.get();
+      this.cb.call(this.vm, value);
+    }
+  }, {
+    key: "get",
+    value: function get() {
+      Dep.target = this;
+      var value = this.vm[this.exp];
+      Dep.target = null;
+      return value;
+    }
+  }]);
+
+  return Watcher;
+}();
+
+module.exports = Watcher;
+
+},{"./Dep":2}],8:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Observer = require("./Observer");
+var Compile = require("./Compile");
+
+var Dahua = function () {
+  function Dahua(opts) {
+    _classCallCheck(this, Dahua);
+
+    this.$el = document.querySelector(opts.el);
+    this.$data = opts.data;
+    this.proxy();
+    this.init();
+  }
+
+  _createClass(Dahua, [{
+    key: "init",
+    value: function init() {
+      this.observe();
+      this.compile();
+    }
+  }, {
+    key: "proxy",
+    value: function proxy() {
+      var _this = this;
+
+      Object.keys(this.$data).forEach(function (key) {
+        Object.defineProperty(_this, key, {
+          get: function get() {
+            return this.$data[key];
+          },
+          set: function set(newVal) {
+            this.$data[key] = newVal;
+          }
+        });
+      });
+    }
+  }, {
+    key: "observe",
+    value: function observe() {
+      this.$observer = new Observer(this.$data);
+    }
+  }, {
+    key: "compile",
+    value: function compile() {
+      this.$compile = new Compile(this, this.$el);
+    }
+  }]);
+
+  return Dahua;
+}();
+
+window.Dahua = Dahua;
+
+},{"./Compile":1,"./Observer":5}]},{},[8]);
