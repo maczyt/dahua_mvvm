@@ -2,5 +2,6 @@
 
 ## Todo
 
-1. v-model
-2. v-for
+1. d-model
+2. d-for
+3. d-on

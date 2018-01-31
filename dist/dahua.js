@@ -91,6 +91,7 @@ var Compile = function () {
   }, {
     key: "bindDirective",
     value: function bindDirective(node, attr) {
+      node.removeAttribute(attr.name);
       var name = attr.name;
       var value = attr.value;
       var directive = name.slice(prefix.length + 1);
@@ -154,9 +155,14 @@ var Utils = require("./Utils");
 
 var Directive = {
   text: function text(node, vm, exp, filters) {
-    this.bind(node, vm, exp, filters);
+    this.bind(node, vm, exp, "text", filters);
   },
-  bind: function bind(node, vm, exp, filters) {
+  show: function show(node, vm, exp) {
+    this.bind(node, vm, exp, "show");
+  },
+  bind: function bind(node, vm, exp, prefix) {
+    var filters = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
+
     filters = filters.map(function (fn) {
       if (Filters[fn]) {
         return Filters[fn];
@@ -166,6 +172,7 @@ var Directive = {
     if (filters.length > 0) {
       value = Utils.compose.apply(Utils, _toConsumableArray(filters))(value);
     }
+    var updater = Updater[prefix];
     // initial view
     updater(node, value);
     new Watcher(node, vm, exp, function (val) {
@@ -180,9 +187,14 @@ var Directive = {
 
 module.exports = Directive;
 
-function updater(node, val) {
-  node.textContent = val;
-}
+var Updater = {
+  text: function text(node, val) {
+    node.textContent = val;
+  },
+  show: function show(node, val) {
+    node.style.display = val ? "" : "none";
+  }
+};
 
 },{"./Filter":4,"./Utils":6,"./Watcher":7}],4:[function(require,module,exports){
 "use strict";

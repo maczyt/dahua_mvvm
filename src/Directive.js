@@ -4,9 +4,12 @@ const Utils = require("./Utils");
 
 const Directive = {
   text(node, vm, exp, filters) {
-    this.bind(node, vm, exp, filters);
+    this.bind(node, vm, exp, "text", filters);
   },
-  bind(node, vm, exp, filters) {
+  show(node, vm, exp) {
+    this.bind(node, vm, exp, "show");
+  },
+  bind(node, vm, exp, prefix, filters = []) {
     filters = filters.map(fn => {
       if (Filters[fn]) {
         return Filters[fn];
@@ -16,6 +19,7 @@ const Directive = {
     if (filters.length > 0) {
       value = Utils.compose(...filters)(value);
     }
+    const updater = Updater[prefix];
     // initial view
     updater(node, value);
     new Watcher(node, vm, exp, val => {
@@ -30,6 +34,11 @@ const Directive = {
 
 module.exports = Directive;
 
-function updater(node, val) {
-  node.textContent = val;
-}
+const Updater = {
+  text(node, val) {
+    node.textContent = val;
+  },
+  show(node, val) {
+    node.style.display = val ? "" : "none";
+  }
+};

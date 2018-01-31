@@ -73,6 +73,7 @@ class Compile {
    * @param {*} attr
    */
   bindDirective(node, attr) {
+    node.removeAttribute(attr.name);
     const name = attr.name;
     const value = attr.value;
     const directive = name.slice(prefix.length + 1);

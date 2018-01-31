@@ -13,6 +13,7 @@
     {{msg|upperCase}}
     <br /> {sdsd}
     <p d-text="msg" data-age="24"></p>
+    <p d-show="flag">Hello World</p>
   </div>
   <script src="./dist/dahua.js"></script>
   <script>
@@ -20,6 +21,7 @@
       el: '#root',
       data: {
         msg: 'Hello Maczyt',
+        flag: true,
       }
     })
   </script>
