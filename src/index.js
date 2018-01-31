@@ -5,6 +5,7 @@ class Dahua {
   constructor(opts) {
     this.$el = document.querySelector(opts.el);
     this.$data = opts.data;
+    this.$methods = opts.methods;
     this.proxy();
     this.init();
   }

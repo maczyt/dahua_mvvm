@@ -100,8 +100,13 @@ var Compile = function () {
       var filters = pipeIndex !== -1 ? value.slice(pipeIndex + 1).split("|").map(function (filter) {
         return filter.trim();
       }) : [];
-      var def = Directive[directive];
-      def && def.call(Directive, node, this.vm, exp, filters);
+      if (directive.indexOf("on") === 0) {
+        var def = Directive["on"];
+        def && def.call(Directive, node, this.vm, this.vm.$methods[exp], directive.slice(2));
+      } else {
+        var _def = Directive[directive];
+        _def && _def.call(Directive, node, this.vm, exp, filters);
+      }
     }
   }]);
 
@@ -157,8 +162,22 @@ var Directive = {
   text: function text(node, vm, exp, filters) {
     this.bind(node, vm, exp, "text", filters);
   },
+  value: function value(node, vm, exp, filters) {
+    this.bind(node, vm, exp, "value", filters);
+  },
   show: function show(node, vm, exp) {
     this.bind(node, vm, exp, "show");
+  },
+  on: function on(node, vm, fn, eventName) {
+    node.addEventListener(eventName, function (e) {
+      fn.call(vm, e);
+    });
+  },
+  model: function model(node, vm, exp, filters) {
+    this.value(node, vm, exp, filters);
+    this.on(node, vm, function (e) {
+      this[exp] = e.target.value;
+    }, "input");
   },
   bind: function bind(node, vm, exp, prefix) {
     var filters = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
@@ -193,6 +212,9 @@ var Updater = {
   },
   show: function show(node, val) {
     node.style.display = val ? "" : "none";
+  },
+  value: function value(node, val) {
+    node.value = val;
   }
 };
 
@@ -340,6 +362,7 @@ var Dahua = function () {
 
     this.$el = document.querySelector(opts.el);
     this.$data = opts.data;
+    this.$methods = opts.methods;
     this.proxy();
     this.init();
   }

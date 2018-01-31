@@ -87,8 +87,20 @@ class Compile {
             .split("|")
             .map(filter => filter.trim())
         : [];
-    const def = Directive[directive];
-    def && def.call(Directive, node, this.vm, exp, filters);
+    if (directive.indexOf("on") === 0) {
+      const def = Directive["on"];
+      def &&
+        def.call(
+          Directive,
+          node,
+          this.vm,
+          this.vm.$methods[exp],
+          directive.slice(2)
+        );
+    } else {
+      const def = Directive[directive];
+      def && def.call(Directive, node, this.vm, exp, filters);
+    }
   }
 }
 

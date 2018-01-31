@@ -13,6 +13,8 @@
     {{msg|upperCase}}
     <br /> {sdsd}
     <p d-text="msg" data-age="24"></p>
+    <input type="text" d-model="msg">
+    <button d-onclick="handleClick">Click show</button>
     <p d-show="flag">Hello World</p>
   </div>
   <script src="./dist/dahua.js"></script>
@@ -22,6 +24,11 @@
       data: {
         msg: 'Hello Maczyt',
         flag: true,
+      },
+      methods: {
+        handleClick() {
+          this.flag = !this.flag;
+        }
       }
     })
   </script>

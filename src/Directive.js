@@ -6,8 +6,27 @@ const Directive = {
   text(node, vm, exp, filters) {
     this.bind(node, vm, exp, "text", filters);
   },
+  value(node, vm, exp, filters) {
+    this.bind(node, vm, exp, "value", filters);
+  },
   show(node, vm, exp) {
     this.bind(node, vm, exp, "show");
+  },
+  on(node, vm, fn, eventName) {
+    node.addEventListener(eventName, e => {
+      fn.call(vm, e);
+    });
+  },
+  model(node, vm, exp, filters) {
+    this.value(node, vm, exp, filters);
+    this.on(
+      node,
+      vm,
+      function(e) {
+        this[exp] = e.target.value;
+      },
+      "input"
+    );
   },
   bind(node, vm, exp, prefix, filters = []) {
     filters = filters.map(fn => {
@@ -40,5 +59,8 @@ const Updater = {
   },
   show(node, val) {
     node.style.display = val ? "" : "none";
+  },
+  value(node, val) {
+    node.value = val;
   }
 };
