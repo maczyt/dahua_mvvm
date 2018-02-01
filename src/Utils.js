@@ -9,6 +9,6 @@ module.exports = {
   curry(fn, arity = fn.length, ...args) {
     return arity <= args.length
       ? fn(...args)
-      : this.curry.bind(fn, arity, ...args);
+      : this.curry.bind(null, fn, arity, ...args);
   }
 };
