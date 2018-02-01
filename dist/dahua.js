@@ -221,11 +221,30 @@ var Updater = {
 },{"./Filter":4,"./Utils":6,"./Watcher":7}],4:[function(require,module,exports){
 "use strict";
 
-module.exports = {
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var string = {
   upperCase: function upperCase(val) {
     return val.toUpperCase();
+  },
+  reverse: function reverse(val) {
+    return val.split("").reverse().join("");
+  },
+  trim: function trim(val) {
+    return val.trim();
   }
 };
+
+var boolean = {
+  isNull: function isNull(val) {
+    return !val && (typeof val === "undefined" ? "undefined" : _typeof(val)) === "object";
+  },
+  isString: function isString(val) {
+    return typeof val === "string";
+  }
+};
+
+module.exports = Object.assign({}, string);
 
 },{}],5:[function(require,module,exports){
 "use strict";
@@ -297,6 +316,17 @@ module.exports = {
         return fn.apply(undefined, _toConsumableArray([].concat(args)));
       }, [].concat(args));
     };
+  },
+  curry: function curry(fn) {
+    var _curry;
+
+    var arity = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : fn.length;
+
+    for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+      args[_key3 - 2] = arguments[_key3];
+    }
+
+    return arity <= args.length ? fn.apply(undefined, args) : (_curry = this.curry).bind.apply(_curry, [null, fn, arity].concat(args));
   }
 };
 

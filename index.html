@@ -10,8 +10,7 @@
 
 <body>
   <div id="root">
-    {{msg|upperCase}}
-    <br /> {sdsd}
+    {{msg|upperCase|reverse}}
     <p d-text="msg" data-age="24"></p>
     <input type="text" d-model="msg">
     <button d-onclick="handleClick">Click show</button>
