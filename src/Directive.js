@@ -53,6 +53,9 @@ const Directive = {
 
 module.exports = Directive;
 
+/**
+ * Updater
+ */
 const Updater = {
   text(node, val) {
     node.textContent = val;

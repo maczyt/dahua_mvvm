@@ -1,3 +1,4 @@
+const uuidv1 = require("uuid/v1");
 const Dep = require("./Dep");
 
 class Watcher {
@@ -6,6 +7,7 @@ class Watcher {
     this.vm = vm;
     this.exp = exp;
     this.cb = cb;
+    this.targetId = uuidv1();
     this.value = this.get();
   }
   update() {
@@ -17,8 +19,10 @@ class Watcher {
   }
   get() {
     Dep.target = this;
+    Dep.targetId = this.targetId;
     const value = this.vm[this.exp];
     Dep.target = null;
+    Dep.targetId = "";
     return value;
   }
 }

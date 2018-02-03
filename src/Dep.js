@@ -1,9 +1,11 @@
 class Dep {
   constructor() {
-    this.$watchers = [];
+    this.$watchers = new Map();
   }
-  add(watcher) {
-    this.$watchers.push(watcher);
+  add(watcher, id) {
+    if (!this.$watchers.has(id)) {
+      this.$watchers.set(id, watcher);
+    }
   }
   notify() {
     this.$watchers.forEach(watcher => {
@@ -13,4 +15,5 @@ class Dep {
 }
 
 Dep.target = null;
+Dep.targetId = "";
 module.exports = Dep;

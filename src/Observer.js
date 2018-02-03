@@ -28,10 +28,11 @@ function observe(data) {
 function defineReactive(data, key, val) {
   const dep = new Dep();
   observe(val);
+
   Object.defineProperty(data, key, {
     enumerable: true,
     get() {
-      Dep.target && dep.add(Dep.target);
+      Dep.target && dep.add(Dep.target, Dep.targetId);
       return val;
     },
     set(newVal) {
