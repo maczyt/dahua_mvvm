@@ -232,8 +232,8 @@ var Compile = function () {
       if (exec) {
         var value = exec[1];
         var pipeIndex = value.indexOf("|");
-        var exp = pipeIndex !== "-1" ? value.slice(0, pipeIndex).trim() : value.trim();
-        var filters = pipeIndex !== "-1" ? value.slice(pipeIndex + 1).split("|").map(function (filter) {
+        var exp = pipeIndex !== -1 ? value.slice(0, pipeIndex).trim() : value.trim();
+        var filters = pipeIndex !== -1 ? value.slice(pipeIndex + 1).split("|").map(function (filter) {
           return filter.trim();
         }) : [];
         var def = Directive["text"];

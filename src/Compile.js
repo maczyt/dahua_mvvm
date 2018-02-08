@@ -46,9 +46,9 @@ class Compile {
       const value = exec[1];
       const pipeIndex = value.indexOf("|");
       const exp =
-        pipeIndex !== "-1" ? value.slice(0, pipeIndex).trim() : value.trim();
+        pipeIndex !== -1 ? value.slice(0, pipeIndex).trim() : value.trim();
       const filters =
-        pipeIndex !== "-1"
+        pipeIndex !== -1
           ? value
               .slice(pipeIndex + 1)
               .split("|")
